@@ -24,6 +24,7 @@ export const TravelList = ({
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editData, setEditData] = useState<TravelPoint | null>(null);
   const [editPosition, setEditPosition] = useState<{ top: number, left: number } | null>(null);
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
 
   const startEdit = (index: number, event: React.MouseEvent) => {
     // Prevent the default behavior
@@ -65,6 +66,24 @@ export const TravelList = ({
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Travel Timeline</h3>
         <div className="flex gap-2">
+          <div className="flex border rounded-md overflow-hidden mr-2">
+            <Button
+              variant={viewMode === 'compact' ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode('compact')}
+              className="rounded-none px-2 py-1 h-8"
+            >
+              Compact
+            </Button>
+            <Button
+              variant={viewMode === 'detailed' ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode('detailed')}
+              className="rounded-none px-2 py-1 h-8"
+            >
+              Detailed
+            </Button>
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -167,56 +186,105 @@ export const TravelList = ({
         />
       )}
       
-      <div className="space-y-4 overflow-y-auto">
+      <div className={`${viewMode === 'compact' ? 'space-y-1' : 'space-y-4'} overflow-y-auto`}>
         {[...points].reverse().map((point, index) => {
           // Calculate the actual index in the original array
           const actualIndex = points.length - 1 - index;
           
-          return (
-          <div key={index} 
-            className="flex items-start justify-between p-2 rounded-lg transition-colors hover:bg-accent"
-          >
-            <div className="flex space-x-4">
-              <div className="flex-shrink-0 w-16 text-sm text-muted-foreground">
-                {new Date(point.date).toLocaleDateString()}
-              </div>
-              <div>
-                <div className="font-medium">{point.city}</div>
-                {(point.transport.length > 0 || point.customTransport) && (
-                  <div className="text-sm text-muted-foreground flex items-center gap-1">
-                    via {point.transport.map(t => {
-                      const option = TRANSPORT_OPTIONS.find(opt => opt.value === t);
-                      return option ? (
-                        <span key={t} title={option.label}>{option.emoji}</span>
-                      ) : null;
-                    })}
-                    {point.customTransport && (
-                      <span className="ml-1">{point.customTransport}</span>
-                    )}
+          // Compact view
+          if (viewMode === 'compact') {
+            return (
+              <div key={index} 
+                className="flex items-center justify-between py-1 px-2 rounded-lg transition-colors hover:bg-accent border-b border-border/50 last:border-b-0"
+              >
+                <div className="flex items-center space-x-3 overflow-hidden">
+                  <div className="flex-shrink-0 w-16 text-xs text-muted-foreground">
+                    {new Date(point.date).toLocaleDateString()}
                   </div>
-                )}
+                  <div className="font-medium truncate">{point.city}</div>
+                  {(point.transport.length > 0) && (
+                    <div className="text-sm text-muted-foreground flex items-center gap-1 flex-shrink-0">
+                      {point.transport.map(t => {
+                        const option = TRANSPORT_OPTIONS.find(opt => opt.value === t);
+                        return option ? (
+                          <span key={t} title={option.label}>{option.emoji}</span>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={(e) => startEdit(actualIndex, e)}
+                  >
+                    ✏️
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 text-destructive" 
+                    onClick={() => onDelete(actualIndex)}
+                  >
+                    🗑️
+                  </Button>
+                </div>
+              </div>
+            );
+          }
+          
+          // Detailed view
+          return (
+            <div key={index} 
+              className="flex items-start justify-between p-2 rounded-lg transition-colors hover:bg-accent"
+            >
+              <div className="flex space-x-4">
+                <div className="flex-shrink-0 w-16 text-sm text-muted-foreground">
+                  {new Date(point.date).toLocaleDateString()}
+                </div>
+                <div>
+                  <div className="font-medium">{point.city}</div>
+                  {(point.transport.length > 0 || point.customTransport) && (
+                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      via {point.transport.map(t => {
+                        const option = TRANSPORT_OPTIONS.find(opt => opt.value === t);
+                        return option ? (
+                          <span key={t} title={option.label}>{option.emoji}</span>
+                        ) : null;
+                      })}
+                      {point.customTransport && (
+                        <span className="ml-1">{point.customTransport}</span>
+                      )}
+                    </div>
+                  )}
+                  {point.notes && (
+                    <div className="text-sm mt-1">{point.notes}</div>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8" 
+                  onClick={(e) => startEdit(actualIndex, e)}
+                >
+                  ✏️
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-destructive" 
+                  onClick={() => onDelete(actualIndex)}
+                >
+                  🗑️
+                </Button>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={(e) => startEdit(actualIndex, e)}
-                className="h-8 w-8"
-              >
-                ✏️
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => onDelete(actualIndex)}
-                className="h-8 w-8 text-destructive"
-              >
-                🗑️
-              </Button>
-            </div>
-          </div>
-        )})}
+          );
+        })}
       </div>
     </Card>
   );
