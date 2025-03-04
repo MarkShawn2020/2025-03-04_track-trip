@@ -1,99 +1,80 @@
-# CS 魔法社企业级模板
+# Travel Trajectory Visualizer
 
-<div align="center">
-  <img src="./public/cs-magic_logo_1280.svg" alt="CS Magic Logo" width="120" height="120" />
-</div>
-
-<h1 align="center">Next.js + Supabase Boilerplate</h1>
+<h1 align="center">Travel Path Visualization</h1>
 
 <p align="center">
-  基于 Next.js 14 App Router + Supabase + Shadcn/UI 的企业级项目模板
+  A modern web application for visualizing your travel trajectories with style
 </p>
 
 <p align="center">
-  <a href="#特性"><strong>特性</strong></a> ·
-  <a href="#最佳实践"><strong>最佳实践</strong></a> ·
-  <a href="#本地开发"><strong>本地开发</strong></a> ·
-  <a href="#项目结构"><strong>项目结构</strong></a>
+  <a href="#features"><strong>Features</strong></a> ·
+  <a href="#tech-stack"><strong>Tech Stack</strong></a> ·
+  <a href="#development"><strong>Development</strong></a> ·
+  <a href="#structure"><strong>Structure</strong></a>
 </p>
 
-## 特性
+## Features
 
-- 🚀 [Next.js 14](https://nextjs.org) App Router
-  - Server Components
-  - Client Components
-  - Server Actions
-  - Middleware
-- 🔐 [Supabase](https://supabase.com) 集成
-  - 认证 & 授权
-    - 基于 Middleware 的 Session 管理
-    - 智能首页：根据登录状态自动切换内容
-  - 数据库
-  - Edge Functions
-- 🎨 现代化 UI/UX
-  - [Tailwind CSS](https://tailwindcss.com)
-  - [Shadcn/UI](https://ui.shadcn.com/)
-  - 响应式设计
-  - 暗色模式
-  - 双模式 Logo 组件
-    - SVG 模式：支持动态颜色
-    - Image 模式：支持主题切换
-- 🛠️ 开发体验
+- 🗺️ Interactive Map Visualization
+  - Beautiful map rendering
+  - Smooth path animations
+  - Custom markers for cities
+  - Transportation mode indicators
+
+- 🎨 Modern UI/UX
+  - Clean and intuitive interface
+  - Responsive design
+  - Dark mode support
+  - Timeline visualization
+
+- 📝 Travel Input
+  - Easy city list input
+  - Date selection
+  - Transportation mode selection
+  - Notes and descriptions
+
+- 🛠️ Technical Stack
+  - Next.js 14 App Router
+  - Tailwind CSS
+  - Shadcn/UI
+  - Map visualization libraries
   - TypeScript
-  - ESLint
-  - Prettier
-  - Husky
-  - Commitlint
 
-## 最佳实践
+## Development
 
-我们整理了一系列最佳实践文档：
-
-- [SVG 作为 React 组件使用](./docs/Best%20Practice%20-%20SVG%20as%20React%20Component.md)
-- [动态 Favicon 生成](./docs/Best%20Practice%20-%20Dynamic%20Favicon.md)
-- [智能首页实现](./docs/Best%20Practice%20-%20Smart%20Homepage.md)
-- [认证最佳实践](./docs/Best%20Practice%20-%20Authentication.md)
-- 更多文档正在编写中...
-
-## 本地开发
-
-1. 克隆项目
+1. Clone the repository
 ```bash
-git clone https://github.com/markshawn2020/boilerplate_next-supabase.git
-cd boilerplate_next-supabase
+git clone https://github.com/markshawn2020/travel-trajectory.git
+cd travel-trajectory
 ```
 
-2. 安装依赖
+2. Install dependencies
 ```bash
 pnpm install
 ```
 
-3. 复制环境变量
-```bash
-cp .env.example .env.local
-```
-
-4. 启动开发服务器
+3. Start development server
 ```bash
 pnpm dev
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 .
 ├── app/                # Next.js App Router
-├── components/         # React 组件
-├── docs/              # 项目文档
-├── lib/               # 工具函数
-├── public/            # 静态资源
-└── types/             # TypeScript 类型定义
+│   ├── layout.tsx     # Root layout
+│   └── page.tsx       # Main page with map
+├── components/        
+│   ├── map/          # Map related components
+│   ├── timeline/     # Timeline visualization
+│   └── ui/           # Shared UI components
+├── lib/              
+│   ├── types/        # TypeScript definitions
+│   └── utils/        # Utility functions
+└── public/           # Static assets
 ```
 
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-## 许可
+## License
 
 MIT License © 2025 [CS Magic](https://github.com/markshawn2020)

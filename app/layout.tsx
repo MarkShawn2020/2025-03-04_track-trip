@@ -16,8 +16,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "CS Magic | Index",
-  description: "CS Magic - Where Code Meets Magic",
+  title: "Travel Path Visualizer",
+  description: "Visualize your travel trajectories with style",
 };
 
 const geistSans = Geist({
@@ -51,20 +51,13 @@ export default function RootLayout({
                       href={"/"} 
                       className="flex items-center gap-2 text-lg md:text-base font-semibold hover:opacity-70 transition-opacity"
                     >
-                      <Logo mode="svg" className="h-8 w-auto" color="currentColor" />
-                      <span>CS Magic</span>
+                      <span className="text-xl">🗺️</span>
+                      <span>Travel Path</span>
                     </Link>
-                    <DeployButton />
                   </div>
                   
-                  <div className="mt-4 md:mt-0 flex justify-center items-center">
-                    {!hasEnvVars ? (
-                      <EnvVarWarning />
-                    ) : (
-                      <div className="flex gap-4 items-center">
-                        <HeaderAuth />
-                      </div>
-                    )}
+                  <div className="mt-4 md:mt-0 flex justify-center items-center gap-4">
+                    <ThemeSwitcher />
                   </div>
                 </div>
               </nav>
@@ -74,7 +67,7 @@ export default function RootLayout({
 
               <footer className="w-full flex flex-col md:flex-row items-center justify-center border-t mx-auto text-center text-xs gap-4 md:gap-8 py-8 md:py-16 px-4">
                 <p>
-                  Powered by{" "}
+                  Made with 💖 by{" "}
                   <a
                     href="https://github.com/markshawn2020"
                     target="_blank"
@@ -84,7 +77,6 @@ export default function RootLayout({
                     CS Magic
                   </a>
                 </p>
-                <ThemeSwitcher />
               </footer>
             </div>
           </main>

@@ -1,65 +1,106 @@
-import Hero from "@/components/hero";
-import Logo from "@/components/logo";
+"use client";
+
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/utils/supabase/server";
-import ConnectSupabaseSteps from "@/components/tutorial/connect-supabase-steps";
-import SignUpUserSteps from "@/components/tutorial/sign-up-user-steps";
-import { hasEnvVars } from "@/utils/supabase/check-env-vars";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
-// Landing Page Component
-const LandingPage = () => (
-  <div className="flex flex-col items-center justify-center py-20 text-center">
-    <Logo mode="svg" className="w-[180px] h-auto" color="currentColor" />
-    <h1 className="text-4xl font-bold m-4">Where Code Meets Magic</h1>
-  </div>
-);
+// Types for our travel data
+type TravelPoint = {
+  city: string;
+  date: string;
+  transport?: string;
+  notes?: string;
+};
 
-// Dashboard Component
-const Dashboard = () => (
-  <div className="flex flex-col gap-8 p-8">
-    <div className="flex justify-between items-center">
-      <h1 className="text-2xl font-bold">我的工作台</h1>
-      <Button className="px-4 py-2 rounded-lg">
-        新建项目
-      </Button>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {/* 这里可以放置项目卡片或其他内容 */}
-      <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
-        <h3 className="font-semibold mb-2">示例项目</h3>
-        <p className="text-gray-600">开始创建您的第一个项目</p>
-      </div>
-    </div>
-  </div>
-);
+const TravelInput = ({ onAdd }: { onAdd: (point: TravelPoint) => void }) => {
+  const [city, setCity] = useState('');
+  const [date, setDate] = useState('');
+  const [transport, setTransport] = useState('');
 
-
-const Index =async () => {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  return user ? <Dashboard /> : (
-    <>
-    <LandingPage />
-    <h2 className="font-medium text-lg md:text-xl mb-2 md:mb-4">Get Started</h2>
-<SignUpUserSteps />
-    </>
-  )
-}
-
-export default async function Home() {
-
+  const handleSubmit = () => {
+    if (city && date) {
+      onAdd({ city, date, transport });
+      setCity('');
+      setDate('');
+      setTransport('');
+    }
+  };
 
   return (
-    <main className="flex-1 w-full">
-        
-        {hasEnvVars ? <Index/> : (
-          <>
-          <h2 className="font-medium text-lg md:text-xl mb-2 md:mb-4">Get Started</h2>
-          <ConnectSupabaseSteps />
-          </>
-          )}
-      
+    <Card className="p-4 space-y-4">
+      <h3 className="text-lg font-semibold">Add Travel Point</h3>
+      <div className="space-y-2">
+        <Input
+          placeholder="City name"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+        />
+        <Input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+        <Input
+          placeholder="Transportation (optional)"
+          value={transport}
+          onChange={(e) => setTransport(e.target.value)}
+        />
+        <Button className="w-full" onClick={handleSubmit}>
+          Add Point
+        </Button>
+      </div>
+    </Card>
+  );
+};
+
+const TravelList = ({ points }: { points: TravelPoint[] }) => (
+  <Card className="p-4">
+    <h3 className="text-lg font-semibold mb-4">Travel Timeline</h3>
+    <div className="space-y-4">
+      {points.map((point, index) => (
+        <div key={index} className="flex items-start space-x-4 p-2 hover:bg-accent rounded-lg transition-colors">
+          <div className="flex-shrink-0 w-16 text-sm text-muted-foreground">
+            {new Date(point.date).toLocaleDateString()}
+          </div>
+          <div>
+            <div className="font-medium">{point.city}</div>
+            {point.transport && (
+              <div className="text-sm text-muted-foreground">
+                via {point.transport}
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </Card>
+);
+
+const MapPlaceholder = () => (
+  <Card className="aspect-video w-full flex items-center justify-center bg-muted">
+    <p className="text-muted-foreground">Map visualization coming soon...</p>
+  </Card>
+);
+
+export default function Home() {
+  const [points, setPoints] = useState<TravelPoint[]>([]);
+
+  const addPoint = (point: TravelPoint) => {
+    setPoints([...points, point]);
+  };
+
+  return (
+    <main className="container mx-auto py-8 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <MapPlaceholder />
+        </div>
+        <div className="space-y-8">
+          <TravelInput onAdd={addPoint} />
+          <TravelList points={points} />
+        </div>
+      </div>
     </main>
   );
 }
