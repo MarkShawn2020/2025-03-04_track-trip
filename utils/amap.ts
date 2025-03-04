@@ -34,7 +34,7 @@ const geocodeCache: Record<string, Promise<[number, number] | null>> = {};
  */
 export async function geocodeCity(cityName: string): Promise<[number, number] | null> {
   // Return from cache if available
-  if (geocodeCache[cityName]) {
+  if (cityName in geocodeCache) {
     return geocodeCache[cityName];
   }
 

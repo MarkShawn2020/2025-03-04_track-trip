@@ -6,11 +6,11 @@ import { TravelPoint } from "./types";
 import { loadAMapScript } from "@/utils/amap";
 import { getCachedGeocode, saveGeocodeToCache, cleanupExpiredCache } from "@/utils/geocodeCache";
 
-interface GeocodedPoint extends TravelPoint {
+interface GeocodedPoint extends Omit<TravelPoint, 'city'> {
   coordinates: [number, number];
   source?: string;
   province?: string;
-  city?: string;
+  city: string;
   district?: string;
   formatted_address?: string;
 }
@@ -88,13 +88,13 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
             console.log("Map initialization complete");
           } catch (mapError) {
             console.error("Error creating map instance:", mapError);
-            setError(`Failed to create map: ${mapError.message || 'Unknown error'}`); 
+            setError(`Failed to create map: ${(mapError as Error).message || 'Unknown error'}`); 
             setLoading(false);
           }
         });
       } catch (err) {
         console.error("Error loading AMap script:", err);
-        setError(`Failed to load map: ${err.message || 'Unknown error'}`);
+        setError(`Failed to load map: ${(err as Error).message || 'Unknown error'}`);
         setLoading(false);
       }
     };
@@ -511,10 +511,11 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
       
       // First pass: record all visits to each city
       sortedPoints.forEach((point, index) => {
-        if (!cityVisits[point.city]) {
-          cityVisits[point.city] = [];
+        const cityKey = point.city;
+        if (!cityVisits[cityKey]) {
+          cityVisits[cityKey] = [];
         }
-        cityVisits[point.city].push(index);
+        cityVisits[cityKey].push(index);
       });
 
       console.log("City visits:", cityVisits);
@@ -570,10 +571,11 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
         markerContent.appendChild(markerLabel);
 
         // For cities with multiple visits, add a badge showing all visit numbers
-        if (cityVisits[point.city] && cityVisits[point.city].length > 1) {
-          const visitNumbers = cityVisits[point.city]
-            .map(idx => idx + 1)
-            .filter(num => num !== i + 1); // Exclude current number
+        const pointCityKey = point.city;
+        if (cityVisits[pointCityKey] && cityVisits[pointCityKey].length > 1) {
+          const visitNumbers = cityVisits[pointCityKey]
+            .map((idx: number) => idx + 1)
+            .filter((num: number) => num !== i + 1); // Exclude current number
           
           if (visitNumbers.length > 0) {
             const multiVisitBadge = document.createElement('div');
@@ -611,14 +613,15 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
 
         // Create info window content with multiple visit information
         let visitInfo = '';
-        if (cityVisits[point.city] && cityVisits[point.city].length > 1) {
-          const otherVisits = cityVisits[point.city]
-            .filter(idx => idx !== i)
-            .map(idx => idx + 1)
+        const visitCityKey = point.city;
+        if (cityVisits[visitCityKey] && cityVisits[visitCityKey].length > 1) {
+          const otherVisits = cityVisits[visitCityKey]
+            .filter((idx: number) => idx !== i)
+            .map((idx: number) => idx + 1)
             .join(', ');
           visitInfo = `
             <div style="margin-top: 4px; font-size: 12px; color: #6b7280;">
-              Also visited as stop${cityVisits[point.city].length > 2 ? 's' : ''} #${otherVisits}
+              Also visited as stop${cityVisits[visitCityKey].length > 2 ? 's' : ''} #${otherVisits}
             </div>
           `;
         }
