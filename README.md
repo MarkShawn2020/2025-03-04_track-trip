@@ -16,9 +16,9 @@
 ## Features
 
 - 🗺️ Interactive Map Visualization
-  - Beautiful map rendering
-  - Smooth path animations
-  - Custom markers for cities
+  - Beautiful map rendering with AMap (Gaode Maps)
+  - Travel route path visualization
+  - City markers with information windows
   - Transportation mode indicators
 
 - 🎨 Modern UI/UX
@@ -37,7 +37,7 @@
   - Next.js 14 App Router
   - Tailwind CSS
   - Shadcn/UI
-  - Map visualization libraries
+  - AMap (Gaode Maps) for visualization
   - TypeScript
 
 ## Development
@@ -53,7 +53,13 @@ cd travel-trajectory
 pnpm install
 ```
 
-3. Start development server
+3. Set up environment variables
+```bash
+# Create a .env.local file with your AMap API key
+echo "NEXT_PUBLIC_AMAP_API_KEY=your_amap_key_here" > .env.local
+```
+
+4. Start development server
 ```bash
 pnpm dev
 ```
@@ -63,15 +69,19 @@ pnpm dev
 ```
 .
 ├── app/                # Next.js App Router
+│   ├── api/           # API routes
+│   │   └── geocode/   # Geocoding API endpoint
 │   ├── layout.tsx     # Root layout
-│   └── page.tsx       # Main page with map
+│   └── page.tsx       # Main page with map and timeline
 ├── components/        
-│   ├── map/          # Map related components
-│   ├── timeline/     # Timeline visualization
+│   ├── travel/       # Travel related components
+│   │   ├── MapPlaceholder.tsx  # AMap visualization
+│   │   ├── TravelInput.tsx     # Input form for travel points
+│   │   ├── TravelList.tsx      # Timeline visualization
+│   │   └── types.ts            # Type definitions
 │   └── ui/           # Shared UI components
-├── lib/              
-│   ├── types/        # TypeScript definitions
-│   └── utils/        # Utility functions
+├── utils/            # Utility functions
+│   └── amap.ts       # AMap helper functions
 └── public/           # Static assets
 ```
 

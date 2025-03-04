@@ -34,7 +34,7 @@ export const TravelList = ({
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editData, setEditData] = useState<TravelPoint | null>(null);
   const [editPosition, setEditPosition] = useState<{ top: number, left: number } | null>(null);
-  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
   
   // Group points by year
   const groupedPoints = React.useMemo(() => {
