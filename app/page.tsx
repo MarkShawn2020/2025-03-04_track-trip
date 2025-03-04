@@ -117,7 +117,8 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
     <Card className="p-4 space-y-4">
       <h3 className="text-lg font-semibold">Add Travel Point</h3>
       <div className="space-y-2">
-        <Input
+<div className="flex flex-col sm:flex-row gap-2">
+<Input
           placeholder="City name"
           value={city}
           onChange={(e) => setCity(e.target.value)}
@@ -136,11 +137,13 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
                 min="0"
                 value={daysToAdd}
                 onChange={(e) => handleDaysChange(parseInt(e.target.value) || 0)}
-                className="w-12"
+                className="w-16"
               />
             </div>
           )}
         </div>
+  </div>
+
         <div className="space-y-2">
           <label className="text-sm font-medium">Transport</label>
           <div className="flex flex-wrap gap-2">
@@ -170,7 +173,7 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
   );
 };
 
-const TravelList = ({ 
+const TravelList = ({
   points, 
   onDelete,
   onEdit,
@@ -205,7 +208,7 @@ const TravelList = ({
   };
 
   return (
-    <Card className="p-4">
+    <Card className="p-4 h-full">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Travel Timeline</h3>
         <div className="flex gap-2">
@@ -404,20 +407,29 @@ export default function Home() {
   const lastDate = points.length > 0 ? points[points.length - 1].date : undefined;
 
   return (
-    <main className="container mx-auto py-8 space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <MapPlaceholder />
+    <main className="container mx-auto py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[calc(100vh-12rem)]">
+        {/* Left section: Map and Input */}
+        <div className="lg:col-span-7 xl:col-span-8 space-y-8">
+          <div className="sticky top-8">
+            <MapPlaceholder />
+            <div className="mt-8">
+              <TravelInput onAdd={addPoint} lastDate={lastDate} />
+            </div>
+          </div>
         </div>
-        <div className="space-y-8">
-          <TravelInput onAdd={addPoint} lastDate={lastDate} />
-          <TravelList 
-            points={points} 
-            onDelete={deletePoint}
-            onEdit={editPoint}
-            onExport={handleExport}
-            onImport={handleImport}
-          />
+
+        {/* Right section: Timeline */}
+        <div className="lg:col-span-5 xl:col-span-4 relative">
+          <div className="lg:absolute inset-0 lg:overflow-auto lg:pr-4 space-y-4">
+            <TravelList 
+              points={points} 
+              onDelete={deletePoint}
+              onEdit={editPoint}
+              onExport={handleExport}
+              onImport={handleImport}
+            />
+          </div>
         </div>
       </div>
     </main>
