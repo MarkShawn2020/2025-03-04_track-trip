@@ -256,6 +256,142 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
 
     // Clear existing markers and polylines
     mapInstance.clearMap();
+    
+    // Collect province data from processed points
+    const provinceVisits: Record<string, number> = {};
+    const provincePoints: Record<string, GeocodedPoint[]> = {};
+    
+    processedPoints.forEach(point => {
+      if (point.province) {
+        if (!provinceVisits[point.province]) {
+          provinceVisits[point.province] = 0;
+          provincePoints[point.province] = [];
+        }
+        provinceVisits[point.province]++;
+        provincePoints[point.province].push(point);
+      }
+    });
+    
+    console.log("Province visits:", provinceVisits);
+    
+    // Load district layer for province highlighting
+    const loadProvinceLayer = () => {
+      try {
+        // Create a district layer for provinces
+        const districtLayer = new window.AMap.DistrictLayer.Province({
+          zIndex: 10,
+          adcode: [],
+          depth: 1,
+          styles: {
+            'fill': function(properties: any) {
+              // Get province name
+              const name = properties.NAME_CHN;
+              
+              // Check if this province has been visited
+              if (provinceVisits[name]) {
+                // Calculate color intensity based on visit count
+                const visits = provinceVisits[name];
+                const maxVisits = Math.max(...Object.values(provinceVisits));
+                const intensity = 0.3 + (visits / maxVisits) * 0.7;
+                
+                // Return a blue color with intensity based on visit count
+                return `rgba(59, 130, 246, ${intensity})`;
+              }
+              
+              // Default color for non-visited provinces
+              return 'rgba(200, 200, 200, 0.1)';
+            },
+            'stroke': '#fff',
+            'strokeWidth': 1
+          }
+        });
+        
+        // Add the district layer to the map
+        mapInstance.add(districtLayer);
+        
+        // Add hover effect for provinces - ensure DistrictExplorer is available
+        if (window.AMap.DistrictExplorer) {
+          const districtExplorer = new window.AMap.DistrictExplorer({
+            map: mapInstance
+          });
+          
+          // Add event listeners for hover effects
+          mapInstance.on('mousemove', function(e: any) {
+            const px = e.pixel;
+            districtExplorer.getDistrictByContainerPos(px, function(error: any, result: any) {
+              if (result && result.districtInfo) {
+                const name = result.districtInfo.NAME_CHN;
+                if (provinceVisits[name]) {
+                  // Show tooltip with province info
+                  const content = `
+                    <div style="
+                      background: white;
+                      border-radius: 8px;
+                      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+                      padding: 12px;
+                      min-width: 150px;
+                    ">
+                      <h3 style="
+                        margin: 0 0 8px 0;
+                        font-size: 16px;
+                        color: #1a1a1a;
+                      ">${name}</h3>
+                      <p style="
+                        margin: 0;
+                        color: #666;
+                        font-size: 14px;
+                      ">访问次数: ${provinceVisits[name]}</p>
+                      <p style="
+                        margin: 4px 0 0 0;
+                        color: #666;
+                        font-size: 14px;
+                      ">城市: ${provincePoints[name].map(p => p.city).filter((v, i, a) => a.indexOf(v) === i).join(', ')}</p>
+                    </div>
+                  `;
+                  
+                  // Create info window if it doesn't exist
+                  if (!mapInstance.provinceInfoWindow) {
+                    mapInstance.provinceInfoWindow = new window.AMap.InfoWindow({
+                      content: content,
+                      offset: new window.AMap.Pixel(0, -20),
+                      closeWhenClickMap: true
+                    });
+                  } else {
+                    mapInstance.provinceInfoWindow.setContent(content);
+                  }
+                  
+                  // Open info window at mouse position
+                  mapInstance.provinceInfoWindow.open(mapInstance, e.lnglat);
+                }
+              }
+            });
+          });
+          
+          // Clear info window when mouse leaves province
+          mapInstance.on('mouseout', function() {
+            if (mapInstance.provinceInfoWindow) {
+              mapInstance.provinceInfoWindow.close();
+            }
+          });
+        } else {
+          console.warn("AMap.DistrictExplorer plugin is not available");
+        }
+        
+      } catch (error) {
+        console.error("Error loading province layer:", error);
+      }
+    };
+    
+    // Load district explorer plugin if needed
+    if (!window.AMap.DistrictLayer || !window.AMap.DistrictExplorer) {
+      console.log("Loading AMap district plugins...");
+      window.AMap.plugin(['AMap.DistrictLayer', 'AMap.DistrictExplorer'], function() {
+        console.log("AMap district plugins loaded successfully");
+        loadProvinceLayer();
+      });
+    } else {
+      loadProvinceLayer();
+    }
 
     const addMarkersAndPolyline = () => {
       const markers: any[] = [];

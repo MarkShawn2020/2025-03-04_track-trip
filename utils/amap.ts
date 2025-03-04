@@ -116,9 +116,8 @@ export function loadAMapScript(callback: (amap: AMapInstance) => void): void {
       console.error("AMap failed to load - AMap object not found on window after callback");
     }
   };
-  
   // Add callback to URL
-  script.src = `https://webapi.amap.com/maps?v=2.0&key=${apiKey}&plugin=AMap.Scale,AMap.ToolBar&callback=${callbackName}`;
+  script.src = `https://webapi.amap.com/maps?v=2.0&key=${apiKey}&plugin=AMap.Scale,AMap.ToolBar,AMap.DistrictLayer,AMap.DistrictExplorer&callback=${callbackName}`;
   script.async = true;
   script.defer = true;
   
