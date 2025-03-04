@@ -5,6 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { TravelPoint, TRANSPORT_OPTIONS } from "./types";
+import { 
+  Map, 
+  ListFilter, 
+  FileText, 
+  Upload, 
+  Download, 
+  Pencil, 
+  Trash2 
+} from "lucide-react";
 import React from "react";
 
 interface TravelListProps {
@@ -88,7 +97,7 @@ export const TravelList = ({
     <Card className="p-4 h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🗺️</span>
+          <Map className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">Travel Timeline</h3>
         </div>
         <div className="flex gap-1">
@@ -101,7 +110,7 @@ export const TravelList = ({
               className="rounded-none h-8 w-8"
               title="Compact View"
             >
-              <span className="text-sm">📋</span>
+              <ListFilter className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'detailed' ? "default" : "ghost"}
@@ -110,7 +119,7 @@ export const TravelList = ({
               className="rounded-none h-8 w-8"
               title="Detailed View"
             >
-              <span className="text-sm">📝</span>
+              <FileText className="h-4 w-4" />
             </Button>
           </div>
           
@@ -122,7 +131,7 @@ export const TravelList = ({
             className="h-8 w-8"
             title="Export Timeline"
           >
-            <span>📤</span>
+            <Upload className="h-4 w-4" />
           </Button>
           
           {/* Import Button */}
@@ -140,7 +149,7 @@ export const TravelList = ({
               className="h-8 w-8"
               title="Import Timeline"
             >
-              <span>📥</span>
+              <Download className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -268,7 +277,7 @@ export const TravelList = ({
                           className="h-6 w-6" 
                           onClick={(e) => startEdit(actualIndex, e)}
                         >
-                          ✏️
+                          <Pencil className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -276,7 +285,7 @@ export const TravelList = ({
                           className="h-6 w-6 text-destructive" 
                           onClick={() => onDelete(actualIndex)}
                         >
-                          🗑️
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
@@ -319,7 +328,7 @@ export const TravelList = ({
                         className="h-8 w-8" 
                         onClick={(e) => startEdit(actualIndex, e)}
                       >
-                        ✏️
+                        <Pencil className="h-4 w-4" />
                       </Button>
                       <Button 
                         variant="ghost" 
@@ -327,7 +336,7 @@ export const TravelList = ({
                         className="h-8 w-8 text-destructive" 
                         onClick={() => onDelete(actualIndex)}
                       >
-                        🗑️
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
