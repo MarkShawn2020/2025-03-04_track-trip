@@ -8,6 +8,10 @@ import { loadAMapScript } from "@/utils/amap";
 interface GeocodedPoint extends TravelPoint {
   coordinates: [number, number];
   source?: string;
+  province?: string;
+  city?: string;
+  district?: string;
+  formatted_address?: string;
 }
 
 interface MapProps {
@@ -119,9 +123,15 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
     
     if (currentPoints.length === 0) return;
     
-    // 检查是否已经处理了所有点
+    // 检查是否已经处理了所有点 - 修改为更精确的检查
+    // 不仅检查城市和日期，还要确保每个点都有坐标
     const allPointsProcessed = currentPoints.every(point => 
-      currentProcessedPoints.some(p => p.city === point.city && p.date === point.date)
+      currentProcessedPoints.some(p => 
+        p.city === point.city && 
+        p.date === point.date && 
+        p.coordinates && 
+        p.coordinates.length === 2
+      )
     );
     
     if (allPointsProcessed) {
@@ -135,11 +145,19 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
     try {
       // 保留已处理的点
       const newProcessedPoints: GeocodedPoint[] = [...currentProcessedPoints];
+      
+      // 修改过滤逻辑，确保所有未处理的点都被处理
       const pointsToProcess = currentPoints.filter(point => 
-        !newProcessedPoints.some(p => p.city === point.city && p.date === point.date)
+        !newProcessedPoints.some(p => 
+          p.city === point.city && 
+          p.date === point.date && 
+          p.coordinates && 
+          p.coordinates.length === 2
+        )
       );
       
       console.log(`Found ${pointsToProcess.length} new points to process`);
+      console.log("Points to process:", pointsToProcess.map(p => p.city).join(", "));
       
       // 如果没有新的点需要处理，直接返回
       if (pointsToProcess.length === 0) {
@@ -155,19 +173,24 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
         const batchPromises = batch.map(async (point) => {
           try {
             console.log(`Geocoding city: ${point.city}`);
-            const response = await fetch(`/api/geocode?city=${encodeURIComponent(point.city)}`);
-            const data = await response.json();
-            
-            if (data.status === "1" && data.geocodes && data.geocodes.length > 0) {
-              const location = data.geocodes[0].location;
-              const [lng, lat] = location.split(",").map(Number);
-              return {
-                ...point,
-                coordinates: [lng, lat] as [number, number],
-                source: data.source || 'unknown'
-              };
-            }
-            return null;
+                console.log(`Trying backup API for ${point.city}`);
+                const backupResponse = await fetch(`/api/amap-geocode?city=${encodeURIComponent(point.city)}`);
+                const backupData = await backupResponse.json();
+                
+                if (backupData.status === "1" && backupData.geocodes && backupData.geocodes.length > 0) {
+                  const backupLocation = backupData.geocodes[0].location;
+                  const [backupLng, backupLat] = backupLocation.split(",").map(Number);
+                  console.log(`Successfully geocoded ${point.city} with backup API: [${backupLng}, ${backupLat}]`);
+                  return {
+                    ...point,
+                    coordinates: [backupLng, backupLat] as [number, number],
+                    source: 'backup-api',
+                    province: backupData.geocodes[0].province,
+                    city: backupData.geocodes[0].city,
+                    district: backupData.geocodes[0].district,
+                    formatted_address: backupData.geocodes[0].formatted_address
+                  };
+                }
           } catch (error) {
             console.error(`Error geocoding ${point.city}:`, error);
             return null;
@@ -176,7 +199,18 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
         
         const batchResults = await Promise.all(batchPromises);
         batchResults.forEach(result => {
-          if (result) newProcessedPoints.push(result);
+          if (result) {
+            // 检查是否已存在相同的点，如果存在则替换
+            const existingIndex = newProcessedPoints.findIndex(p => 
+              p.city === result.city && p.date === result.date
+            );
+            
+            if (existingIndex >= 0) {
+              newProcessedPoints[existingIndex] = result;
+            } else {
+              newProcessedPoints.push(result);
+            }
+          }
         });
         
         // Small delay between batches to be nice to the API
@@ -185,6 +219,7 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
         }
       }
       
+      console.log("Processed points after geocoding:", newProcessedPoints.map(p => p.city).join(", "));
       setProcessedPoints(newProcessedPoints);
     } catch (error) {
       console.error("Error during geocoding:", error);
@@ -232,6 +267,19 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
         return new Date(a.date).getTime() - new Date(b.date).getTime();
       });
 
+      // Track city occurrences for multiple visits
+      const cityVisits: Record<string, number[]> = {};
+      
+      // First pass: record all visits to each city
+      sortedPoints.forEach((point, index) => {
+        if (!cityVisits[point.city]) {
+          cityVisits[point.city] = [];
+        }
+        cityVisits[point.city].push(index);
+      });
+
+      console.log("City visits:", cityVisits);
+
       // Process each travel point
       for (let i = 0; i < sortedPoints.length; i++) {
         const point = sortedPoints[i];
@@ -241,12 +289,13 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
         // Get transport icon
         const getTransportIcon = (transport: string) => {
           const iconMap: { [key: string]: string } = {
-            '飞机': '✈️',
-            '火车': '🚂',
-            '汽车': '🚗',
-            '步行': '🚶',
-            '自行车': '🚲',
-            '轮船': '🚢',
+            'flight': '✈️',
+            'train': '🚂',
+            'bus': '🚌',
+            'car': '🚗',
+            'taxi': '🛵',
+            'bike': '🚲',
+            'walk': '🚶',
           };
           return iconMap[transport] || '📍';
         };
@@ -281,6 +330,33 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
         // Combine label and icon
         markerContent.appendChild(markerLabel);
 
+        // For cities with multiple visits, add a badge showing all visit numbers
+        if (cityVisits[point.city] && cityVisits[point.city].length > 1) {
+          const visitNumbers = cityVisits[point.city]
+            .map(idx => idx + 1)
+            .filter(num => num !== i + 1); // Exclude current number
+          
+          if (visitNumbers.length > 0) {
+            const multiVisitBadge = document.createElement('div');
+            multiVisitBadge.style.cssText = `
+              background-color: #EF4444;
+              color: white;
+              border-radius: 10px;
+              padding: 2px 6px;
+              font-size: 10px;
+              font-weight: bold;
+              position: absolute;
+              top: -8px;
+              right: -8px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+              border: 1px solid white;
+            `;
+            multiVisitBadge.textContent = `+${visitNumbers.length}`;
+            markerContent.style.position = 'relative';
+            markerContent.appendChild(multiVisitBadge);
+          }
+        }
+
         // Create marker
         const marker = new window.AMap.Marker({
           position: coordinate,
@@ -293,6 +369,35 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
         // Format date for display
         const date = new Date(point.date);
         const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+
+        // Create info window content with multiple visit information
+        let visitInfo = '';
+        if (cityVisits[point.city] && cityVisits[point.city].length > 1) {
+          const otherVisits = cityVisits[point.city]
+            .filter(idx => idx !== i)
+            .map(idx => idx + 1)
+            .join(', ');
+          visitInfo = `
+            <div style="margin-top: 4px; font-size: 12px; color: #6b7280;">
+              Also visited as stop${cityVisits[point.city].length > 2 ? 's' : ''} #${otherVisits}
+            </div>
+          `;
+        }
+
+        // Create transport display
+        let transportDisplay = '';
+        if (point.transport && point.transport.length > 0) {
+          const transportIcons = point.transport.map(t => {
+            return `<span>${getTransportIcon(t)}</span>`;
+          }).join(' ');
+          
+          transportDisplay = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>${transportIcons}</span>
+              <span>${point.transport.join(', ')}</span>
+            </div>
+          `;
+        }
 
         // Create info window content
         const content = `
@@ -337,12 +442,14 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
                 <span>📅</span>
                 <span>${formattedDate}</span>
               </div>
-              ${point.transport ? `
+              ${transportDisplay}
+              ${point.formatted_address ? `
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span>${getTransportIcon(point.transport)}</span>
-                  <span>${point.transport}</span>
+                  <span>📍</span>
+                  <span>${point.formatted_address}</span>
                 </div>
               ` : ''}
+              ${visitInfo}
             </div>
           </div>
         `;
