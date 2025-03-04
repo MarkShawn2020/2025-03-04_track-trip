@@ -238,84 +238,168 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
         const coordinate = point.coordinates;
         pathCoordinates.push(coordinate);
 
+        // Get transport icon
+        const getTransportIcon = (transport: string) => {
+          const iconMap: { [key: string]: string } = {
+            '飞机': '✈️',
+            '火车': '🚂',
+            '汽车': '🚗',
+            '步行': '🚶',
+            '自行车': '🚲',
+            '轮船': '🚢',
+          };
+          return iconMap[transport] || '📍';
+        };
+
+        // Create marker label with number
+        const markerLabel = document.createElement('div');
+        markerLabel.style.cssText = `
+          background-color: #3B82F6;
+          color: white;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: bold;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          border: 2px solid white;
+        `;
+        markerLabel.textContent = `${i + 1}`;
+
+        // Create marker content container
+        const markerContent = document.createElement('div');
+        markerContent.style.cssText = `
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+        `;
+        
+        // Combine label and icon
+        markerContent.appendChild(markerLabel);
+
         // Create marker
         const marker = new window.AMap.Marker({
           position: coordinate,
-          title: point.city,
-          animation: "AMAP_ANIMATION_DROP",
-          map: mapInstance,
+          content: markerContent,
+          offset: new window.AMap.Pixel(-12, -36),
+          zIndex: 90 + i, // Later points appear on top
+          animation: 'AMAP_ANIMATION_DROP',
         });
 
         // Format date for display
         const date = new Date(point.date);
-        const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
-
-        // Create transport icons string
-        const transportIcons = point.transportation ? 
-          point.transportation.split(',').map((t) => {
-            const transport = t.trim().toLowerCase();
-            switch (transport) {
-              case "flight": return "✈️";
-              case "train": return "🚂";
-              case "bus": return "🚌";
-              case "car": return "🚗";
-              case "taxi": return "🛵";
-              case "bike": return "🚲";
-              case "walk": return "🚶";
-              default: return transport;
-            }
-          }).filter(Boolean).join(" ") : "";
+        const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
 
         // Create info window content
         const content = `
-          <div class="info-window">
-            <h3 style="margin: 0; font-size: 16px;">${point.city}</h3>
-            <p style="margin: 5px 0; font-size: 14px;">${formattedDate}</p>
-            ${transportIcons ? `<p style="margin: 5px 0; font-size: 14px;">Transport: ${transportIcons}</p>` : ""}
-            ${point.notes ? `<p style="margin: 5px 0; font-size: 14px;">${point.notes}</p>` : ""}
+          <div style="
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            padding: 16px;
+            min-width: 200px;
+          ">
+            <div style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              margin-bottom: 8px;
+            ">
+              <span style="
+                background-color: #3B82F6;
+                color: white;
+                border-radius: 50%;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+              ">${i + 1}</span>
+              <h3 style="
+                margin: 0;
+                font-size: 18px;
+                color: #1a1a1a;
+              ">${point.city}</h3>
+            </div>
+            <div style="
+              padding-left: 32px;
+              color: #666;
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+            ">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>📅</span>
+                <span>${formattedDate}</span>
+              </div>
+              ${point.transport ? `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span>${getTransportIcon(point.transport)}</span>
+                  <span>${point.transport}</span>
+                </div>
+              ` : ''}
+            </div>
           </div>
         `;
 
         // Create info window
         const infoWindow = new window.AMap.InfoWindow({
           content,
-          offset: new window.AMap.Pixel(0, -30),
+          offset: new window.AMap.Pixel(0, -40),
+          shadow: true,
         });
 
-        // Add click event to marker
-        marker.on("click", () => {
+        // Add hover events
+        markerContent.addEventListener('mouseenter', () => {
+          markerLabel.style.transform = 'scale(1.1)';
           infoWindow.open(mapInstance, marker.getPosition());
+        });
+
+        markerContent.addEventListener('mouseleave', () => {
+          markerLabel.style.transform = 'scale(1)';
+          setTimeout(() => infoWindow.close(), 300);
         });
 
         markers.push(marker);
         infoWindows.push(infoWindow);
-
-        // If it's the first point, open its info window
-        if (i === 0) {
-          infoWindow.open(mapInstance, marker.getPosition());
-        }
       }
 
-      // Create polyline if we have at least 2 points
+      // Add all markers to map
+      mapInstance.add(markers);
+
+      // Create path if we have at least 2 points
       if (pathCoordinates.length >= 2) {
-        const polyline = new window.AMap.Polyline({
-          path: pathCoordinates,
-          strokeColor: "#3B82F6", // Blue color
-          strokeWeight: 4,
-          strokeOpacity: 0.8,
-          strokeStyle: "solid",
-          lineJoin: "round",
-          lineCap: "round",
-          zIndex: 50,
+        // Create gradient colors for path segments
+        const colors = sortedPoints.map((_, index) => {
+          const progress = index / (sortedPoints.length - 1);
+          return `rgba(59, 130, 246, ${0.4 + progress * 0.6})`; // Fade from light to dark blue
         });
 
-        polyline.setMap(mapInstance);
-
-        // Fit map to show all markers
-        if (markers.length > 0) {
-          mapInstance.setFitView(null, false, [60, 60, 60, 60]);
+        // Create path segments with different colors
+        for (let i = 0; i < pathCoordinates.length - 1; i++) {
+          const segment = new window.AMap.Polyline({
+            path: [pathCoordinates[i], pathCoordinates[i + 1]],
+            strokeColor: colors[i],
+            strokeWeight: 4,
+            strokeStyle: 'solid',
+            lineJoin: 'round',
+            lineCap: 'round',
+            showDir: true,
+            dirColor: colors[i],
+            zIndex: 50 + i,
+            geodesic: true,
+          });
+          mapInstance.add(segment);
         }
       }
+
+      // Fit map to show all markers with padding
+      mapInstance.setFitView(null, false, [80, 80, 80, 80]);
     };
 
     addMarkersAndPolyline();
