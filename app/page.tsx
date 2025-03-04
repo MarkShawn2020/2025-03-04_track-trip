@@ -72,6 +72,12 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
     }
   };
 
+  // Increment or decrement days
+  const adjustDays = (amount: number) => {
+    const newDays = Math.max(0, daysToAdd + amount);
+    handleDaysChange(newDays);
+  };
+
   // Update daysToAdd when date changes
   const handleDateChange = (newDate: string) => {
     setDate(newDate);
@@ -131,14 +137,28 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
             className="flex-1"
           />
           {lastDate && (
-            <div className="flex gap-2 items-center">
-              <Input
-                type="number"
-                min="0"
-                value={daysToAdd}
-                onChange={(e) => handleDaysChange(parseInt(e.target.value) || 0)}
-                className="w-16"
-              />
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-8 w-8" 
+                onClick={() => adjustDays(-1)}
+                disabled={daysToAdd <= 0}
+              >
+                -
+              </Button>
+              <div className="flex items-center gap-1 px-2 py-1 border rounded-md min-w-[4rem] justify-center">
+                <span className="text-sm">{daysToAdd}</span>
+                <span className="text-xs text-muted-foreground">days</span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-8 w-8" 
+                onClick={() => adjustDays(1)}
+              >
+                +
+              </Button>
             </div>
           )}
         </div>
