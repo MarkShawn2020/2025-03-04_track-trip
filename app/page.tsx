@@ -208,7 +208,7 @@ const TravelList = ({
   };
 
   return (
-    <Card className="p-4 h-full">
+    <Card className="p-4 h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Travel Timeline</h3>
         <div className="flex gap-2">
@@ -237,8 +237,8 @@ const TravelList = ({
           </div>
         </div>
       </div>
-      <div className="space-y-4">
-        {points.map((point, index) => (
+      <div className="space-y-4 overflow-y-auto">
+        {[...points].reverse().map((point, index) => (
           <div key={index} 
             className={`flex items-start justify-between p-2 rounded-lg transition-colors ${
               editIndex === index ? 'bg-accent' : 'hover:bg-accent'
@@ -420,8 +420,8 @@ export default function Home() {
         </div>
 
         {/* Right section: Timeline */}
-        <div className="lg:col-span-5 xl:col-span-4 relative">
-          <div className="lg:absolute inset-0 lg:overflow-auto lg:pr-4 space-y-4">
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col h-full">
+          <div className="h-full overflow-hidden">
             <TravelList 
               points={points} 
               onDelete={deletePoint}
