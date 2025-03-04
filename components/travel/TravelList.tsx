@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { TravelPoint, TRANSPORT_OPTIONS } from "./types";
+import React from "react";
 
 interface TravelListProps {
   points: TravelPoint[];
@@ -25,6 +26,28 @@ export const TravelList = ({
   const [editData, setEditData] = useState<TravelPoint | null>(null);
   const [editPosition, setEditPosition] = useState<{ top: number, left: number } | null>(null);
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
+  
+  // Group points by year
+  const groupedPoints = React.useMemo(() => {
+    const sorted = [...points].reverse();
+    const groups: Record<string, TravelPoint[]> = {};
+    
+    sorted.forEach((point, index) => {
+      const year = new Date(point.date).getFullYear().toString();
+      if (!groups[year]) {
+        groups[year] = [];
+      }
+      groups[year].push({
+        ...point,
+        // Store the original index for edit/delete operations
+        _originalIndex: points.length - 1 - index
+      } as TravelPoint & { _originalIndex: number });
+    });
+    
+    // Sort years in descending order (most recent first)
+    return Object.entries(groups)
+      .sort(([yearA], [yearB]) => parseInt(yearB) - parseInt(yearA));
+  }, [points]);
 
   const startEdit = (index: number, event: React.MouseEvent) => {
     // Prevent the default behavior
@@ -199,105 +222,120 @@ export const TravelList = ({
         />
       )}
       
-      <div className={`${viewMode === 'compact' ? 'space-y-1' : 'space-y-4'} overflow-y-auto`}>
-        {[...points].reverse().map((point, index) => {
-          // Calculate the actual index in the original array
-          const actualIndex = points.length - 1 - index;
-          
-          // Compact view
-          if (viewMode === 'compact') {
-            return (
-              <div key={index} 
-                className="flex items-center justify-between py-1 px-2 rounded-lg transition-colors hover:bg-accent border-b border-border/50 last:border-b-0"
-              >
-                <div className="flex items-center space-x-3 overflow-hidden">
-                  <div className="flex-shrink-0 w-16 text-xs text-muted-foreground">
-                    {new Date(point.date).toLocaleDateString()}
-                  </div>
-                  <div className="font-medium truncate">{point.city}</div>
-                  {(point.transport.length > 0) && (
-                    <div className="text-sm text-muted-foreground flex items-center gap-1 flex-shrink-0">
-                      {point.transport.map(t => {
-                        const option = TRANSPORT_OPTIONS.find(opt => opt.value === t);
-                        return option ? (
-                          <span key={t} title={option.label}>{option.emoji}</span>
-                        ) : null;
-                      })}
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6" 
-                    onClick={(e) => startEdit(actualIndex, e)}
-                  >
-                    ✏️
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6 text-destructive" 
-                    onClick={() => onDelete(actualIndex)}
-                  >
-                    🗑️
-                  </Button>
-                </div>
-              </div>
-            );
-          }
-          
-          // Detailed view
-          return (
-            <div key={index} 
-              className="flex items-start justify-between p-2 rounded-lg transition-colors hover:bg-accent"
-            >
-              <div className="flex space-x-4">
-                <div className="flex-shrink-0 w-16 text-sm text-muted-foreground">
-                  {new Date(point.date).toLocaleDateString()}
-                </div>
-                <div>
-                  <div className="font-medium">{point.city}</div>
-                  {(point.transport.length > 0 || point.customTransport) && (
-                    <div className="text-sm text-muted-foreground flex items-center gap-1">
-                      via {point.transport.map(t => {
-                        const option = TRANSPORT_OPTIONS.find(opt => opt.value === t);
-                        return option ? (
-                          <span key={t} title={option.label}>{option.emoji}</span>
-                        ) : null;
-                      })}
-                      {point.customTransport && (
-                        <span className="ml-1">{point.customTransport}</span>
-                      )}
-                    </div>
-                  )}
-                  {point.notes && (
-                    <div className="text-sm mt-1">{point.notes}</div>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8" 
-                  onClick={(e) => startEdit(actualIndex, e)}
-                >
-                  ✏️
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-destructive" 
-                  onClick={() => onDelete(actualIndex)}
-                >
-                  🗑️
-                </Button>
-              </div>
+      <div className="overflow-y-auto">
+        {groupedPoints.map(([year, yearPoints]) => (
+          <div key={year} className="mb-4">
+            {/* Year Header */}
+            <div className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 py-1 px-2 border-b border-border mb-1">
+              <h4 className="text-sm font-semibold">{year}</h4>
             </div>
-          );
-        })}
+            
+            {/* Points for this year */}
+            <div className={viewMode === 'compact' ? 'space-y-1' : 'space-y-4'}>
+              {yearPoints.map((point, index) => {
+                const actualIndex = (point as any)._originalIndex;
+                
+                // Format date as MM-DD
+                const date = new Date(point.date);
+                const formattedDate = `${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+                
+                // Compact view
+                if (viewMode === 'compact') {
+                  return (
+                    <div key={index} 
+                      className="flex items-center justify-between py-1 px-2 rounded-lg transition-colors hover:bg-accent border-b border-border/50 last:border-b-0"
+                    >
+                      <div className="flex items-center space-x-3 overflow-hidden">
+                        <div className="flex-shrink-0 w-14 text-xs text-muted-foreground text-right font-mono">
+                          {formattedDate}
+                        </div>
+                        <div className="font-medium truncate">{point.city}</div>
+                        {(point.transport.length > 0) && (
+                          <div className="text-sm text-muted-foreground flex items-center gap-1 flex-shrink-0">
+                            {point.transport.map(t => {
+                              const option = TRANSPORT_OPTIONS.find(opt => opt.value === t);
+                              return option ? (
+                                <span key={t} title={option.label}>{option.emoji}</span>
+                              ) : null;
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6" 
+                          onClick={(e) => startEdit(actualIndex, e)}
+                        >
+                          ✏️
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6 text-destructive" 
+                          onClick={() => onDelete(actualIndex)}
+                        >
+                          🗑️
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // Detailed view
+                return (
+                  <div key={index} 
+                    className="flex items-start justify-between p-2 rounded-lg transition-colors hover:bg-accent"
+                  >
+                    <div className="flex space-x-4">
+                      <div className="flex-shrink-0 w-14 text-sm text-muted-foreground text-right font-mono">
+                        {formattedDate}
+                      </div>
+                      <div>
+                        <div className="font-medium">{point.city}</div>
+                        {(point.transport.length > 0 || point.customTransport) && (
+                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                            via {point.transport.map(t => {
+                              const option = TRANSPORT_OPTIONS.find(opt => opt.value === t);
+                              return option ? (
+                                <span key={t} title={option.label}>{option.emoji}</span>
+                              ) : null;
+                            })}
+                            {point.customTransport && (
+                              <span className="ml-1">{point.customTransport}</span>
+                            )}
+                          </div>
+                        )}
+                        {point.notes && (
+                          <div className="text-sm mt-1">{point.notes}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8" 
+                        onClick={(e) => startEdit(actualIndex, e)}
+                      >
+                        ✏️
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-destructive" 
+                        onClick={() => onDelete(actualIndex)}
+                      >
+                        🗑️
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </Card>
   );
