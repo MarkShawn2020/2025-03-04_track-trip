@@ -277,6 +277,63 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
     // Load district layer for province highlighting
     const loadProvinceLayer = () => {
       try {
+        // Normalize province names to match AMap's internal naming
+        const normalizedProvinceVisits: Record<string, number> = {};
+        const normalizedProvincePoints: Record<string, GeocodedPoint[]> = {};
+        
+        // Create mapping for common province name variations
+        const provinceNameMapping: Record<string, string> = {
+          '北京市': '北京',
+          '天津市': '天津',
+          '河北省': '河北',
+          '山西省': '山西',
+          '内蒙古自治区': '内蒙古',
+          '辽宁省': '辽宁',
+          '吉林省': '吉林',
+          '黑龙江省': '黑龙江',
+          '上海市': '上海',
+          '江苏省': '江苏',
+          '浙江省': '浙江',
+          '安徽省': '安徽',
+          '福建省': '福建',
+          '江西省': '江西',
+          '山东省': '山东',
+          '河南省': '河南',
+          '湖北省': '湖北',
+          '湖南省': '湖南',
+          '广东省': '广东',
+          '广西壮族自治区': '广西',
+          '海南省': '海南',
+          '重庆市': '重庆',
+          '四川省': '四川',
+          '贵州省': '贵州',
+          '云南省': '云南',
+          '西藏自治区': '西藏',
+          '陕西省': '陕西',
+          '甘肃省': '甘肃',
+          '青海省': '青海',
+          '宁夏回族自治区': '宁夏',
+          '新疆维吾尔自治区': '新疆',
+          '台湾省': '台湾',
+          '香港特别行政区': '香港',
+          '澳门特别行政区': '澳门'
+        };
+        
+        // Normalize province names in our data
+        Object.entries(provinceVisits).forEach(([province, count]) => {
+          const normalizedName = provinceNameMapping[province] || province;
+          if (!normalizedProvinceVisits[normalizedName]) {
+            normalizedProvinceVisits[normalizedName] = 0;
+            normalizedProvincePoints[normalizedName] = [];
+          }
+          normalizedProvinceVisits[normalizedName] += count;
+          if (provincePoints[province]) {
+            normalizedProvincePoints[normalizedName].push(...provincePoints[province]);
+          }
+        });
+        
+        console.log("Normalized province visits:", normalizedProvinceVisits);
+        
         // Create a district layer for provinces
         const districtLayer = new window.AMap.DistrictLayer.Province({
           zIndex: 10,
@@ -287,11 +344,24 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
               // Get province name
               const name = properties.NAME_CHN;
               
+              // Debug province name matching
+              if (Object.keys(normalizedProvinceVisits).length > 0 && !normalizedProvinceVisits[name]) {
+                // Check if there's a name mismatch issue
+                const provinceNames = Object.keys(normalizedProvinceVisits);
+                const similarNames = provinceNames.filter(p => 
+                  p.includes(name) || name.includes(p)
+                );
+                
+                if (similarNames.length > 0) {
+                  console.log(`Province name mismatch: Map has "${name}" but data has "${similarNames.join(', ')}"`); 
+                }
+              }
+              
               // Check if this province has been visited
-              if (provinceVisits[name]) {
+              if (normalizedProvinceVisits[name]) {
                 // Calculate color intensity based on visit count
-                const visits = provinceVisits[name];
-                const maxVisits = Math.max(...Object.values(provinceVisits));
+                const visits = normalizedProvinceVisits[name];
+                const maxVisits = Math.max(...Object.values(normalizedProvinceVisits));
                 const intensity = 0.3 + (visits / maxVisits) * 0.7;
                 
                 // Return a blue color with intensity based on visit count
@@ -321,7 +391,7 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
             districtExplorer.getDistrictByContainerPos(px, function(error: any, result: any) {
               if (result && result.districtInfo) {
                 const name = result.districtInfo.NAME_CHN;
-                if (provinceVisits[name]) {
+                if (normalizedProvinceVisits[name]) {
                   // Show tooltip with province info
                   const content = `
                     <div style="
@@ -340,12 +410,12 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
                         margin: 0;
                         color: #666;
                         font-size: 14px;
-                      ">访问次数: ${provinceVisits[name]}</p>
+                      ">访问次数: ${normalizedProvinceVisits[name]}</p>
                       <p style="
                         margin: 4px 0 0 0;
                         color: #666;
                         font-size: 14px;
-                      ">城市: ${provincePoints[name].map(p => p.city).filter((v, i, a) => a.indexOf(v) === i).join(', ')}</p>
+                      ">城市: ${normalizedProvincePoints[name].map(p => p.city).filter((v, i, a) => a.indexOf(v) === i).join(', ')}</p>
                     </div>
                   `;
                   
@@ -366,6 +436,7 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
               }
             });
           });
+
           
           // Clear info window when mouse leaves province
           mapInstance.on('mouseout', function() {
@@ -383,11 +454,14 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
     };
     
     // Load district explorer plugin if needed
-    if (!window.AMap.DistrictLayer || !window.AMap.DistrictExplorer) {
+    if (!window.AMap.DistrictLayer || !window.AMap.DistrictLayer.Province || !window.AMap.DistrictExplorer) {
       console.log("Loading AMap district plugins...");
       window.AMap.plugin(['AMap.DistrictLayer', 'AMap.DistrictExplorer'], function() {
         console.log("AMap district plugins loaded successfully");
-        loadProvinceLayer();
+        // Ensure the plugins are fully loaded before proceeding
+        setTimeout(() => {
+          loadProvinceLayer();
+        }, 100);
       });
     } else {
       loadProvinceLayer();
