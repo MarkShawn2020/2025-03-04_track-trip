@@ -1,11 +1,19 @@
 "use client";
 
-import { MapPlaceholder, TravelInput, TravelList, TravelPoint } from "@/components/travel";
-import { useState } from "react";
+import { MapPlaceholder, TravelInput, TravelList, TravelPoint, TravelTimeline } from "@/components/travel";
+import { useEffect, useState } from "react";
+import { getDefaultTravelData } from "@/utils/dataLoader";
 
 
 export default function Home() {
   const [points, setPoints] = useState<TravelPoint[]>([]);
+  
+  // 初始化时加载旅行数据
+  useEffect(() => {
+    const travelData = getDefaultTravelData();
+    setPoints(travelData);
+  }, []);
+  const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
 
   const addPoint = (point: TravelPoint) => {
     setPoints([...points, point]);
@@ -66,7 +74,11 @@ export default function Home() {
         {/* Left section: Map and Input */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-8">
           <div className="sticky top-8">
-            <MapPlaceholder />
+            <MapPlaceholder 
+              points={points} 
+              selectedPoint={selectedPoint}
+              onSelectPoint={setSelectedPoint}
+            />
             <div className="mt-8">
               <TravelInput onAdd={addPoint} lastDate={lastDate} />
             </div>
@@ -74,8 +86,18 @@ export default function Home() {
         </div>
 
         {/* Right section: Timeline */}
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col h-full">
-          <div className="h-full overflow-hidden">
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col h-full gap-8">
+          {/* Timeline visualization */}
+          <div className="h-64 overflow-hidden">
+            <TravelTimeline 
+              points={points} 
+              selectedPoint={selectedPoint}
+              onSelectPoint={setSelectedPoint}
+            />
+          </div>
+          
+          {/* Travel list with edit/delete controls */}
+          <div className="flex-1 overflow-hidden">
             <TravelList 
               points={points} 
               onDelete={deletePoint}
