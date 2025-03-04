@@ -64,7 +64,7 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
 
   // Update date when daysToAdd changes
   const handleDaysChange = (newDays: number) => {
-    if (lastDate && newDays > 0) {
+    if (lastDate && newDays >= 0) {
       const nextDate = new Date(lastDate);
       nextDate.setDate(nextDate.getDate() + newDays);
       setDate(formatDate(nextDate));
@@ -77,7 +77,7 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
     setDate(newDate);
     if (lastDate) {
       const diff = Math.round((new Date(newDate).getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24));
-      if (diff > 0) setDaysToAdd(diff);
+      setDaysToAdd(Math.max(0, diff));
     }
   };
 
@@ -101,9 +101,15 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
         transport: allTransport,
         customTransport: customTransport || undefined
       });
+
+      // Clear city and custom transport
       setCity('');
-      // Keep the date and transport selection for continuous input
       setCustomTransport('');
+
+      // Keep the same date for next entry
+      const nextDate = new Date(date);
+      setDate(formatDate(nextDate));
+      setDaysToAdd(0);
     }
   };
 
@@ -127,9 +133,9 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
             <div className="flex gap-2 items-center">
               <Input
                 type="number"
-                min="1"
+                min="0"
                 value={daysToAdd}
-                onChange={(e) => handleDaysChange(parseInt(e.target.value) || 1)}
+                onChange={(e) => handleDaysChange(parseInt(e.target.value) || 0)}
                 className="w-12"
               />
             </div>
