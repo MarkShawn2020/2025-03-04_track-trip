@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { TravelPoint } from "./types";
 import { loadAMapScript } from "@/utils/amap";
+import { getCachedGeocode, saveGeocodeToCache, cleanupExpiredCache } from "@/utils/geocodeCache";
 
 interface GeocodedPoint extends TravelPoint {
   coordinates: [number, number];
@@ -39,6 +40,12 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
   useEffect(() => {
     processedPointsRef.current = processedPoints;
   }, [processedPoints]);
+
+  // Clean up expired cache entries when component mounts
+  useEffect(() => {
+    // Clean up expired cache entries
+    cleanupExpiredCache();
+  }, []);
 
   // Load AMap and initialize map
   useEffect(() => {
@@ -173,24 +180,46 @@ export const MapPlaceholder = ({ points = [] }: MapProps) => {
         const batchPromises = batch.map(async (point) => {
           try {
             console.log(`Geocoding city: ${point.city}`);
-                console.log(`Trying backup API for ${point.city}`);
-                const backupResponse = await fetch(`/api/amap-geocode?city=${encodeURIComponent(point.city)}`);
-                const backupData = await backupResponse.json();
-                
-                if (backupData.status === "1" && backupData.geocodes && backupData.geocodes.length > 0) {
-                  const backupLocation = backupData.geocodes[0].location;
-                  const [backupLng, backupLat] = backupLocation.split(",").map(Number);
-                  console.log(`Successfully geocoded ${point.city} with backup API: [${backupLng}, ${backupLat}]`);
-                  return {
-                    ...point,
-                    coordinates: [backupLng, backupLat] as [number, number],
-                    source: 'backup-api',
-                    province: backupData.geocodes[0].province,
-                    city: backupData.geocodes[0].city,
-                    district: backupData.geocodes[0].district,
-                    formatted_address: backupData.geocodes[0].formatted_address
-                  };
-                }
+            
+            // First check local storage cache
+            const cachedData = getCachedGeocode(point.city);
+            if (cachedData) {
+              console.log(`Using locally cached data for ${point.city}`);
+              const location = cachedData.geocodes[0].location;
+              const [lng, lat] = location.split(",").map(Number);
+              return {
+                ...point,
+                coordinates: [lng, lat] as [number, number],
+                source: 'local-cache',
+                province: cachedData.geocodes[0].province,
+                city: cachedData.geocodes[0].city,
+                district: cachedData.geocodes[0].district,
+                formatted_address: cachedData.geocodes[0].formatted_address
+              };
+            }
+            
+            // If not in cache, try the API
+            console.log(`Trying backup API for ${point.city}`);
+            const backupResponse = await fetch(`/api/amap-geocode?city=${encodeURIComponent(point.city)}`);
+            const backupData = await backupResponse.json();
+            
+            if (backupData.status === "1" && backupData.geocodes && backupData.geocodes.length > 0) {
+              // Save successful result to local storage cache
+              saveGeocodeToCache(point.city, backupData);
+              
+              const backupLocation = backupData.geocodes[0].location;
+              const [backupLng, backupLat] = backupLocation.split(",").map(Number);
+              console.log(`Successfully geocoded ${point.city} with backup API: [${backupLng}, ${backupLat}]`);
+              return {
+                ...point,
+                coordinates: [backupLng, backupLat] as [number, number],
+                source: 'backup-api',
+                province: backupData.geocodes[0].province,
+                city: backupData.geocodes[0].city,
+                district: backupData.geocodes[0].district,
+                formatted_address: backupData.geocodes[0].formatted_address
+              };
+            }
           } catch (error) {
             console.error(`Error geocoding ${point.city}:`, error);
             return null;
