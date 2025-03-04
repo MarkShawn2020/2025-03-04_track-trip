@@ -39,12 +39,47 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
   // Get today's date in YYYY-MM-DD format
   const today = formatDate(new Date());
 
-  // Initialize state with today's date if no lastDate
+  // Initialize state
   const [city, setCity] = useState('');
-  const [date, setDate] = useState(today);
   const [selectedTransport, setSelectedTransport] = useState<string[]>([]);
   const [customTransport, setCustomTransport] = useState('');
-  const [daysToAdd, setDaysToAdd] = useState(1);
+
+  // Calculate initial date based on lastDate
+  const initialDate = lastDate ? (() => {
+    const nextDate = new Date(lastDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    return formatDate(nextDate);
+  })() : today;
+
+  const [date, setDate] = useState(initialDate);
+
+  // Calculate days difference when date changes
+  const calculateDaysDiff = () => {
+    if (!lastDate) return 1;
+    const diff = Math.round((new Date(date).getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24));
+    return diff;
+  };
+
+  const [daysToAdd, setDaysToAdd] = useState(calculateDaysDiff());
+
+  // Update date when daysToAdd changes
+  const handleDaysChange = (newDays: number) => {
+    if (lastDate && newDays > 0) {
+      const nextDate = new Date(lastDate);
+      nextDate.setDate(nextDate.getDate() + newDays);
+      setDate(formatDate(nextDate));
+      setDaysToAdd(newDays);
+    }
+  };
+
+  // Update daysToAdd when date changes
+  const handleDateChange = (newDate: string) => {
+    setDate(newDate);
+    if (lastDate) {
+      const diff = Math.round((new Date(newDate).getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24));
+      if (diff > 0) setDaysToAdd(diff);
+    }
+  };
 
   const handleTransportToggle = (value: string) => {
     setSelectedTransport(prev =>
@@ -52,15 +87,6 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
         ? prev.filter(t => t !== value)
         : [...prev, value]
     );
-  };
-
-  // Quick add days to last date
-  const handleQuickAdd = () => {
-    if (lastDate) {
-      const nextDate = new Date(lastDate);
-      nextDate.setDate(nextDate.getDate() + daysToAdd);
-      setDate(formatDate(nextDate));
-    }
   };
 
   const handleSubmit = () => {
@@ -94,7 +120,7 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
           <Input
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => handleDateChange(e.target.value)}
             className="flex-1"
           />
           {lastDate && (
@@ -103,17 +129,9 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
                 type="number"
                 min="1"
                 value={daysToAdd}
-                onChange={(e) => setDaysToAdd(parseInt(e.target.value) || 1)}
+                onChange={(e) => handleDaysChange(parseInt(e.target.value) || 1)}
                 className="w-12"
               />
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={handleQuickAdd}
-                title={`Add ${daysToAdd} days to last date`}
-              >
-                +
-              </Button>
             </div>
           )}
         </div>
@@ -149,11 +167,15 @@ const TravelInput = ({ onAdd, lastDate }: { onAdd: (point: TravelPoint) => void;
 const TravelList = ({ 
   points, 
   onDelete,
-  onEdit 
+  onEdit,
+  onExport,
+  onImport
 }: { 
   points: TravelPoint[]; 
   onDelete: (index: number) => void;
   onEdit: (index: number, point: TravelPoint) => void;
+  onExport: () => void;
+  onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editData, setEditData] = useState<TravelPoint | null>(null);
@@ -178,7 +200,34 @@ const TravelList = ({
 
   return (
     <Card className="p-4">
-      <h3 className="text-lg font-semibold mb-4">Travel Timeline</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Travel Timeline</h3>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            className="flex items-center gap-1"
+          >
+            <span>📤</span> Export
+          </Button>
+          <div className="relative">
+            <input
+              type="file"
+              accept=".json"
+              onChange={onImport}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <span>📥</span> Import
+            </Button>
+          </div>
+        </div>
+      </div>
       <div className="space-y-4">
         {points.map((point, index) => (
           <div key={index} 
@@ -307,6 +356,44 @@ export default function Home() {
     setPoints(points.map((point, i) => i === index ? updatedPoint : point));
   };
 
+  const handleExport = () => {
+    const dataStr = JSON.stringify(points, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `travel-trajectory-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const importedPoints = JSON.parse(event.target?.result as string);
+        if (Array.isArray(importedPoints) && importedPoints.every(point => 
+          typeof point === 'object' && 
+          'city' in point && 
+          'date' in point && 
+          'transport' in point
+        )) {
+          setPoints(importedPoints);
+        } else {
+          alert('Invalid file format');
+        }
+      } catch (error) {
+        alert('Error reading file');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   // Get the last date from points array
   const lastDate = points.length > 0 ? points[points.length - 1].date : undefined;
 
@@ -322,6 +409,8 @@ export default function Home() {
             points={points} 
             onDelete={deletePoint}
             onEdit={editPoint}
+            onExport={handleExport}
+            onImport={handleImport}
           />
         </div>
       </div>
