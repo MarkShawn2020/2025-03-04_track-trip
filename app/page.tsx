@@ -258,7 +258,11 @@ const TravelList = ({
         </div>
       </div>
       <div className="space-y-4 overflow-y-auto">
-        {[...points].reverse().map((point, index) => (
+        {[...points].reverse().map((point, index) => {
+          // Calculate the actual index in the original array
+          const actualIndex = points.length - 1 - index;
+          
+          return (
           <div key={index} 
             className={`flex items-start justify-between p-2 rounded-lg transition-colors ${
               editIndex === index ? 'bg-accent' : 'hover:bg-accent'
@@ -341,7 +345,7 @@ const TravelList = ({
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    onClick={() => startEdit(index)}
+                    onClick={() => startEdit(actualIndex)}
                     className="h-8 w-8"
                   >
                     ✏️
@@ -349,7 +353,7 @@ const TravelList = ({
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    onClick={() => onDelete(index)}
+                    onClick={() => onDelete(actualIndex)}
                     className="h-8 w-8 text-destructive"
                   >
                     🗑️
@@ -358,7 +362,7 @@ const TravelList = ({
               </>
             )}
           </div>
-        ))}
+        )})}
       </div>
     </Card>
   );
