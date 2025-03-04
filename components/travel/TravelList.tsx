@@ -64,47 +64,60 @@ export const TravelList = ({
   return (
     <Card className="p-4 h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Travel Timeline</h3>
-        <div className="flex gap-2">
-          <div className="flex border rounded-md overflow-hidden mr-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🗺️</span>
+          <h3 className="text-lg font-semibold">Travel Timeline</h3>
+        </div>
+        <div className="flex gap-1">
+          {/* View Mode Toggle */}
+          <div className="flex border rounded-md overflow-hidden">
             <Button
               variant={viewMode === 'compact' ? "default" : "ghost"}
-              size="sm"
+              size="icon"
               onClick={() => setViewMode('compact')}
-              className="rounded-none px-2 py-1 h-8"
+              className="rounded-none h-8 w-8"
+              title="Compact View"
             >
-              Compact
+              <span className="text-sm">📋</span>
             </Button>
             <Button
               variant={viewMode === 'detailed' ? "default" : "ghost"}
-              size="sm"
+              size="icon"
               onClick={() => setViewMode('detailed')}
-              className="rounded-none px-2 py-1 h-8"
+              className="rounded-none h-8 w-8"
+              title="Detailed View"
             >
-              Detailed
+              <span className="text-sm">📝</span>
             </Button>
           </div>
+          
+          {/* Export Button */}
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon"
             onClick={onExport}
-            className="flex items-center gap-1"
+            className="h-8 w-8"
+            title="Export Timeline"
           >
-            <span>📤</span> Export
+            <span>📤</span>
           </Button>
+          
+          {/* Import Button */}
           <div className="relative">
             <input
               type="file"
               accept=".json"
               onChange={onImport}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              title="Import Timeline"
             />
             <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              title="Import Timeline"
             >
-              <span>📥</span> Import
+              <span>📥</span>
             </Button>
           </div>
         </div>
