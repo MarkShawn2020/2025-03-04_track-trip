@@ -134,23 +134,28 @@ export const TravelList = ({
             <Upload className="h-4 w-4" />
           </Button>
           
-          {/* Import Button */}
+          {/* Import Button - Using a styled button with proper hover effect */}
           <div className="relative">
-            <input
-              type="file"
-              accept=".json"
-              onChange={onImport}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              title="Import Timeline"
-            />
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8"
               title="Import Timeline"
+              type="button"
+              onClick={() => {
+                return document.getElementById('file-import')!.click();
+              }}
             >
               <Download className="h-4 w-4" />
             </Button>
+            <input
+              id="file-import"
+              type="file"
+              accept=".json"
+              onChange={onImport}
+              className="hidden"
+              title="Import Timeline"
+            />
           </div>
         </div>
       </div>
