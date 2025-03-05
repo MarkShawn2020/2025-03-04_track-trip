@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import "./globals.css";
 import Script from "next/script";
+import { Badge } from "@/components/ui/badge";
+
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -12,15 +14,15 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "TravelTrack Pro | Visualize Your Journey",
-  description: "Transform your travel memories into beautiful interactive maps. Share, plan, and relive your journeys with TravelTrack Pro.",
+  title: "VTrip | Visualize Your Journey",
+  description: "Transform your travel memories into beautiful interactive maps. Share, plan, and relive your journeys with VTrip.",
   keywords: "travel tracking, journey visualization, travel map, trip planner, interactive travel map",
   authors: [{ name: "CS Magic" }],
   openGraph: {
-    title: "TravelTrack Pro | Visualize Your Journey",
+    title: "VTrip | Visualize Your Journey",
     description: "Transform your travel memories into beautiful interactive maps",
     url: defaultUrl,
-    siteName: "TravelTrack Pro",
+    siteName: "VTrip",
     images: [{
       url: "/opengraph-image.png",
       width: 1200,
@@ -31,7 +33,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "TravelTrack Pro | Visualize Your Journey",
+    title: "VTrip | Visualize Your Journey",
     description: "Transform your travel memories into beautiful interactive maps",
     images: ["/twitter-image.png"],
   },
@@ -75,7 +77,7 @@ export default function RootLayout({
                     <span className="text-xl text-white">🗺️</span>
                   </div>
                   <span className="font-montserrat font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                    TravelTrack Pro
+                    VTrip
                   </span>
                 </Link>
                 <nav className="flex items-center space-x-6">
@@ -105,7 +107,7 @@ export default function RootLayout({
                       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-1">
                         <span className="text-sm text-white">🗺️</span>
                       </div>
-                      <span className="font-montserrat font-bold text-base">TravelTrack Pro</span>
+                      <span className="font-montserrat font-bold text-base">VTrip</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Transform your travel memories into beautiful interactive maps.
@@ -138,17 +140,19 @@ export default function RootLayout({
                 </div>
                 <div className="mt-8 pt-6 border-t border-border/40 flex flex-col md:flex-row justify-between items-center">
                   <p className="text-xs text-muted-foreground">
-                    © {new Date().getFullYear()} TravelTrack Pro. All rights reserved.
+                    © {new Date().getFullYear()} VTrip. All rights reserved.
                   </p>
                   <p className="text-xs text-muted-foreground mt-2 md:mt-0">
                     Made with 💖 by{" "}
-                    <a
+ <a
                       href="https://github.com/markshawn2020"
                       target="_blank"
                       className="font-medium hover:underline"
                       rel="noreferrer"
-                    >
-                      CS Magic
+                      >
+                      <Badge variant={'secondary'}>
+                      公众号：手工川
+ </Badge>
                     </a>
                   </p>
                 </div>

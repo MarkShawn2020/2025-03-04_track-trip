@@ -1,6 +1,6 @@
-# Travel Trajectory Visualizer
+# VTrip
 
-<h1 align="center">Travel Path Visualization</h1>
+<h1 align="center">VTrip - Visualize Your Trip</h1>
 
 <p align="center">
   A modern web application for visualizing your travel trajectories with style
@@ -44,8 +44,8 @@
 
 1. Clone the repository
 ```bash
-git clone https://github.com/markshawn2020/travel-trajectory.git
-cd travel-trajectory
+git clone https://github.com/markshawn2020/vtrip.git
+cd vtrip
 ```
 
 2. Install dependencies
@@ -87,4 +87,4 @@ pnpm dev
 
 ## License
 
-MIT License © 2025 [CS Magic](https://github.com/markshawn2020)
+MIT License © 2025 [VTrip](https://github.com/markshawn2020)

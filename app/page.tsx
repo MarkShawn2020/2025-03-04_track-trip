@@ -25,7 +25,7 @@ export default function Home() {
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `traveltrack-journey-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `vtrip-journey-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -127,7 +127,7 @@ export default function Home() {
       {/* Features Section */}
       <section id="features" className="container mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-montserrat font-bold">Why Choose TravelTrack Pro?</h2>
+          <h2 className="text-3xl font-montserrat font-bold">Why Choose VTrip?</h2>
           <p className="text-muted-foreground mt-2">Everything you need to document your travel experiences</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
